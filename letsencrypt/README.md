@@ -1,4 +1,4 @@
-# letsencrypt-scripts
+# letsencrypt
 The Collection of Let's Encrypt Scripts
 
 #### Obtaining SSL Certification
