@@ -331,6 +331,7 @@ crontab -l | { cat; echo "15 3 * * * certbot renew --quiet --deploy-hook \"docke
 #
 # Setup backup
 #
+timedatectl set-timezone Asia/Bangkok
 mkdir backups
 chown centos:centos backups
 
