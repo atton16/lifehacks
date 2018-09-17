@@ -267,6 +267,8 @@ server {
 	
   root /usr/share/nginx/html;
 
+  client_max_body_size 15M;
+
   # global gzip on
   gzip on;
   gzip_min_length 10240;
