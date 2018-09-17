@@ -225,7 +225,7 @@ resolver 8.8.8.8 8.8.4.4 valid=300s;
 resolver_timeout 5s;
 # disable HSTS header for now
 #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
-add_header X-Frame-Options DENY;
+#add_header X-Frame-Options DENY;
 add_header X-Content-Type-Options nosniff;
 
 ssl_dhparam /usr/certs/dhparam.pem;
