@@ -24,6 +24,9 @@ echo "3. Setup phpMyAdmin behind NGINX using Docker (localhost access only)"
 echo "4. Setup daily backup at 2AM"
 echo "5. Setup auto backup removal when older than 2days"
 echo ""
+echo "PREREQUISITES"
+echo "1. Please create 'keys' folder"
+echo "2. Put your ssh public keys into that folder"
 
 echo "Please specify your CloudFlare email:"
 read cloudflare_email
@@ -117,6 +120,7 @@ docker pull nginx:mainline-alpine
 docker pull mariadb:latest
 docker pull phpmyadmin/phpmyadmin:latest
 docker pull wordpress:latest
+docker pull atmoz/sftp:alpine
 
 #
 # Create docker network
@@ -169,6 +173,18 @@ docker run \
   -e WORDPRESS_DB_USER=wordpress \
   -e WORDPRESS_DB_PASSWORD=$wordpress_db_pwd \
   wordpress:latest
+
+#
+# Run sftp
+#
+docker run \
+  -d \
+  -p 2222:22 \
+  --name my-sftp \
+  -v /home/centos/keys:/home/centos/.ssh/keys:ro \
+  --mount type=bind,source="$(pwd)"/wp_htdocs,target=/home/centos/share \
+  atmoz/sftp:alpine \
+  centos::33
 
 #
 # Prepare files for nginx
