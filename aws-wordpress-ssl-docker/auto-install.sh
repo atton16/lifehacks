@@ -152,7 +152,6 @@ docker run \
   -e MYSQL_ROOT_PASSWORD=$mariadb_root_pwd \
   -e PMA_HOST=my-mariadb \
   -e PMA_PORT=3306 \
-  -e PMA_ABSOLUTE_URI=http://localhost/pma/ \
   phpmyadmin/phpmyadmin:latest
 
 
