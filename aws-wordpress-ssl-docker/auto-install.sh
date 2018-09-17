@@ -158,6 +158,17 @@ docker run \
   -e PMA_PORT=3306 \
   phpmyadmin/phpmyadmin:latest
 
+#
+# Prepare PHP config for WordPress
+#
+mkdir php
+mkdir php/conf.d
+cat <<EOF > php/conf.d/uploads.ini
+file_uploads = On
+upload_max_filesize = 15M
+post_max_size = 15M
+max_execution_time = 600
+EOF
 
 #
 # Run wordpress
@@ -168,6 +179,7 @@ docker run \
   --network=wp-net \
   --name my-wordpress \
   --mount type=bind,source="$(pwd)"/wp_htdocs,target=/var/www/html \
+  -v "$(pwd)"/php/conf.d/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro \
   -e WORDPRESS_DB_HOST=my-mariadb:3306 \
   -e WORDPRESS_DB_NAME=wordpress \
   -e WORDPRESS_DB_USER=wordpress \
