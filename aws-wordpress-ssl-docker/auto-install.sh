@@ -20,10 +20,9 @@ echo ""
 echo "THIS SCRIPT WILL"
 echo "1. Setup SSL using CloudFlare (root and wildcard)"
 echo "2. Setup WordPress behind NGINX using Docker"
-echo "3. Setup phpMyAdmin behind NGINX using Docker (localhost access only)"
-echo "4. Setup daily backup at 2AM"
-echo "5. Setup auto backup removal when older than 2days"
-echo "6. Set Timezone to Asia/Bangkok"
+echo "3. Setup daily backup at 2AM"
+echo "4. Setup auto backup removal when older than 2days"
+echo "5. Set Timezone to Asia/Bangkok"
 echo ""
 echo "PREREQUISITES"
 echo "1. Please create 'keys' folder"
@@ -119,7 +118,6 @@ systemctl start docker
 #
 docker pull nginx:mainline-alpine
 docker pull mariadb:latest
-docker pull phpmyadmin/phpmyadmin:latest
 docker pull wordpress:latest
 docker pull atmoz/sftp:alpine
 
@@ -145,19 +143,6 @@ docker run \
   -e MYSQL_USER=wordpress \
   -e MYSQL_PASSWORD=$wordpress_db_pwd \
   mariadb:latest
-
-#
-# Run phpmyadmin
-#
-docker run \
-  -d \
-  --restart=always \
-  --network=wp-net \
-  --name my-phpmyadmin \
-  -e MYSQL_ROOT_PASSWORD=$mariadb_root_pwd \
-  -e PMA_HOST=my-mariadb \
-  -e PMA_PORT=3306 \
-  phpmyadmin/phpmyadmin:latest
 
 #
 # Prepare PHP config for WordPress
