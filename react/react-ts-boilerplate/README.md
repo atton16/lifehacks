@@ -1,0 +1,47 @@
+# react-ts-boilerplate
+
+### App Features
+
+1. Hello world page
+2. Display user's name
+3. Set user's name
+4. In-memory state retention using `RxJS` and `React's Higher-Order Components (HOC)`
+
+### Emphasis
+
+1. The use of `TypeScript` language and `TSLint` enable us to
+   1. write cleaner code,
+   2. write more solid code,
+   3. avoid using `FlowTypes`
+2. Demonstrate the power of `RxJS` to avoid using over-complicating state management framrworks like `Flux` and `Redux`.
+   1. This, in turns, also helps us write code that is easier to test
+
+### Technical Features
+
+1. React App
+2. Written language: `TypeScript`
+3. Linter: `TSLint`
+4. Test Framework: `Jest`
+
+### Disclaimer
+
+This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
+
+The original execution line was
+
+```
+create-react-app react-ts-boilerplate --scripts-version=react-scripts-ts
+```
+
+See: [https://github.com/Microsoft/TypeScript-React-Starter](https://github.com/Microsoft/TypeScript-React-Starter)
+
+### License
+
+Copyright (C) Attawit Kittikrairit - All Rights Reserved
+
+Unauthorized copying of this file, via any medium is strictly prohibited
+
+Proprietary and confidential
+
+Written by Attawit Kittikrairit <iam@attawit.me>, July 2017
+
