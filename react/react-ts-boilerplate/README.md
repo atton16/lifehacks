@@ -22,6 +22,15 @@
 2. Written language: `TypeScript`
 3. Linter: `TSLint`
 4. Test Framework: `Jest`
+5. Package manager: `Yarn`
+
+
+### Getting Started
+
+1. Clone this repository
+2. Install dependencies, execute `yarn install`
+3. Run, execute `yarn start`
+
 
 ### Disclaimer
 
