@@ -6,6 +6,8 @@
 2. Display user's name
 3. Set user's name
 4. In-memory state retention using `RxJS` and `React's Higher-Order Components (HOC)`
+5. Declarative routing using `react-router`.
+6. Conform with `PWA` standard by using `manifest.json` and `service worker`.
 
 ### Emphasis
 
