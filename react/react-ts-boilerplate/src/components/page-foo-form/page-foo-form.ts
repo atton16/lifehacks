@@ -4,22 +4,18 @@ import { RouteComponentProps } from 'react-router-dom';
 import ui from './page-foo-form.ui';
 
 import { nameService } from '../../services/name.service';
+import required from '../../validators/required';
 
 interface IProps extends RouteComponentProps {
 }
 
 interface IState {
-  name: string;
 }
 
 export class FooFormPage extends Component<IProps,IState> {
   constructor(props: IProps) {
     super(props);
-    this.state = {
-      name: ''
-    };
     
-    this.handleNameChange = this.handleNameChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
@@ -27,13 +23,14 @@ export class FooFormPage extends Component<IProps,IState> {
     return ui.apply(this);
   }
 
-  public handleNameChange(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({name: event.target.value});
-  }
+  public handleSubmit(values: any, actions: any) {
+    actions.setSubmitting(false);
+    if (!required(values.name)) {
+      actions.setErrors({name: 'Name is required'});
+      return;
+    }
 
-  public handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    nameService.setName(this.state.name);
+    nameService.setName(values.name);
     this.props.history.push('/');
   }
 }
