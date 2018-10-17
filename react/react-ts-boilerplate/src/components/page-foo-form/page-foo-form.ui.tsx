@@ -19,7 +19,8 @@ export default function (this: FooFormPage) {
               form-control ${props.touched.name && props.errors.name ? 'is-invalid' : ''}
             `}
             name="name"
-            placeholder="John"/>
+            placeholder="John"
+          />
           <ErrorMessage name="name">
             {errMsg => <div className="invalid-feedback">{errMsg}</div>}
           </ErrorMessage>
