@@ -5,9 +5,10 @@
 1. Hello world page
 2. Display user's name
 3. Set user's name
-4. In-memory state retention using `RxJS` and `React's Higher-Order Components (HOC)`
-5. Declarative routing using `react-router`.
-6. Conform with `PWA` standard by using `manifest.json` and `service worker`.
+4. Validate user's name using `formik`
+5. In-memory state retention using `RxJS` and `React's Higher-Order Components (HOC)`
+6. Declarative routing using `react-router`.
+7. Conform with `PWA` standard by using `manifest.json` and `service worker`.
 
 ### Emphasis
 
@@ -25,7 +26,6 @@
 3. Linter: `TSLint`
 4. Test Framework: `Jest`
 5. Package manager: `Yarn`
-
 
 ### Getting Started
 
