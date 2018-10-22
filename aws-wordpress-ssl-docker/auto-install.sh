@@ -49,7 +49,7 @@ yum install -y mysql
 #
 # Generate Passwords
 #
-./gen-passwords.txt
+./gen-passwords.sh
 
 #
 # Setup AWS CLI
