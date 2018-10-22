@@ -44,7 +44,7 @@ yum install -y epel-release
 yum -y install python-pip
 pip install --upgrade pip
 pip install --upgrade awscli
-yum install -y mysql
+yum install -y jq mysql
 
 #
 # Generate Passwords
