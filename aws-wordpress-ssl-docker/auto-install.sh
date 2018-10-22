@@ -52,14 +52,14 @@ yum install -y mysql
 ./gen-passwords.sh
 
 #
-# Setup AWS CLI
-#
-./step.1.aws-configure.sh
-
-#
 # Import config
 #
 source export-config.sh
+
+#
+# Setup AWS CLI
+#
+./step.1.aws-configure.sh
 
 #
 # Launch Database Instance
