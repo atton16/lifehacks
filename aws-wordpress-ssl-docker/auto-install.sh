@@ -108,6 +108,8 @@ EOF
 
 chmod u+rwx,g-wx,o-wx gen-certs.sh
 
+# Hot fix
+pip install pyOpenSSL --upgrade --user
 ./gen-certs.sh
 
 #
