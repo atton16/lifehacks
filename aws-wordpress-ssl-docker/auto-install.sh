@@ -18,36 +18,56 @@ echo ""
 echo "REMARK: This script only runs on CentOS"
 echo ""
 echo "THIS SCRIPT WILL"
-echo "1. Setup SSL using CloudFlare (root and wildcard)"
-echo "2. Setup WordPress behind NGINX using Docker"
-echo "3. Setup daily backup at 2AM"
-echo "4. Setup auto backup removal when older than 2days"
-echo "5. Set Timezone to Asia/Bangkok"
+echo "1. Setup AWS CLI"
+echo "2. Launch Database Instance"
+echo "3. Setup SSL using CloudFlare (root and wildcard)"
+echo "4. Setup WordPress behind NGINX using Docker"
+echo "5. Setup daily backup at 2AM"
+echo "6. Setup auto backup removal when older than 2days"
+echo "7. Set Timezone to Asia/Bangkok"
 echo ""
 echo "PREREQUISITES"
-echo "1. Please create 'keys' folder"
-echo "2. Put your ssh public keys into that folder"
+echo "1. Edit details in 'export-config.sh'"
+echo "2. Please create 'keys' folder"
+echo "3. Put your ssh public keys into that folder"
+echo ""
+echo "Type 'ok' to continue: "
+read ok
+if [[ $ok != 'ok' ]]; then
+  exit 1
+fi
 
-echo "Please specify your CloudFlare email:"
-read cloudflare_email
+#
+# Install AWS CLI
+#
+yum -y install python-pip
+pip install --upgrade pip
+pip install --upgrade awscli
+yum install -y mysql
 
-echo "Please specify your CloudFlare API Key:"
-echo "HINT: My Profile > API Keys > Global API Key > View"
-read cloudflare_api_key
+#
+# Generate Passwords
+#
+./gen-passwords.txt
 
-echo "Please specify your (root) domain name:"
-read domain_name
+#
+# Setup AWS CLI
+#
+./step.1.aws-configure.sh
 
-echo "Please specify(create) MariaDB root password:"
-echo "(your input will be hidden)"
-echo "Note: You can create strong password at"
-echo "      https://passwordsgenerator.net"
-read -s mariadb_root_pwd
+#
+# Import config
+#
+source export-config.sh
 
-echo "Creating WordPress DB User: wordpress"
-echo "Please specify(create) WordPress DB password:"
-echo "(your input will be hidden)"
-read -s wordpress_db_pwd
+#
+# Launch Database Instance
+#
+./step.2.create-db-parameter-group.sh
+./step.3.set-db-timezone.sh
+./step.4.create-db-instance.sh
+source get-db-endpoint.sh
+./step.5.create-db-user.sh
 
 #
 # Prepare files & folders
@@ -69,8 +89,8 @@ yum install -y certbot python2-certbot-dns-cloudflare
 # Domain configuration
 cat <<EOF > cloudflare.ini
 # Cloudflare API credentials used by Certbot
-dns_cloudflare_email = $cloudflare_email
-dns_cloudflare_api_key = $cloudflare_api_key
+dns_cloudflare_email = $CLOUDFLARE_EMAIL
+dns_cloudflare_api_key = $CLOUDFLARE_API_KEY
 EOF
 
 chmod u+rw,g-rwx,o-rwx cloudflare.ini
@@ -82,8 +102,8 @@ certbot certonly \
   --dns-cloudflare \
   --dns-cloudflare-credentials cloudflare.ini \
   --server https://acme-v02.api.letsencrypt.org/directory \
-  -d $domain_name \
-  -d "*.$domain_name"
+  -d $DOMAIN_NAME \
+  -d "*.$DOMAIN_NAME"
 EOF
 
 chmod u+rwx,g-wx,o-wx gen-certs.sh
@@ -114,10 +134,10 @@ systemctl start docker
 
 #
 # Pull necessary images
-# Required: 960GB Disk Space
+# Required: 960MB Disk Space
 #
 docker pull nginx:mainline-alpine
-docker pull mariadb:latest
+docker pull bitnami/phpmyadmin:latest
 docker pull wordpress:latest
 docker pull atmoz/sftp:alpine
 
@@ -126,23 +146,6 @@ docker pull atmoz/sftp:alpine
 # Named: wp-net
 #
 docker network create -d=bridge wp-net
-
-
-#
-# Run MariaDB (Mysql)
-#
-docker run \
-  -d \
-  -p 3306:3306 \
-  --restart=always \
-  --network=wp-net \
-  --name my-mariadb \
-  -v my-mariadb:/var/lib/mysql \
-  -e MYSQL_ROOT_PASSWORD=$mariadb_root_pwd \
-  -e MYSQL_DATABASE=wordpress \
-  -e MYSQL_USER=wordpress \
-  -e MYSQL_PASSWORD=$wordpress_db_pwd \
-  mariadb:latest
 
 #
 # Prepare PHP config for WordPress
@@ -159,30 +162,22 @@ EOF
 #
 # Run wordpress
 #
-docker run \
-  -d \
-  --restart=on-failure:3 \
-  --network=wp-net \
-  --name my-wordpress \
-  --mount type=bind,source="$(pwd)"/wp_htdocs,target=/var/www/html \
-  -v "$(pwd)"/php/conf.d/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro \
-  -e WORDPRESS_DB_HOST=my-mariadb:3306 \
-  -e WORDPRESS_DB_NAME=wordpress \
-  -e WORDPRESS_DB_USER=wordpress \
-  -e WORDPRESS_DB_PASSWORD=$wordpress_db_pwd \
-  wordpress:latest
+./run.wp.sh
 
 #
 # Run sftp
 #
-docker run \
-  -d \
-  -p 2222:22 \
-  --name my-sftp \
-  -v /home/centos/keys:/home/centos/.ssh/keys:ro \
-  --mount type=bind,source="$(pwd)"/wp_htdocs,target=/home/centos/share \
-  atmoz/sftp:alpine \
-  centos::33
+./run.sftp-user.sh
+
+#
+# Create sftp-support
+#
+./create.sftp-support.sh
+
+#
+# Run phpmyadmin
+#
+./run.pma.sh
 
 #
 # Prepare files for nginx
@@ -218,18 +213,16 @@ ssl_dhparam /usr/certs/dhparam.pem;
 EOF
 
 # Domain SSL snippet
-cat <<EOF > nginx/snippets/ssl-"$domain_name".conf
-ssl_certificate /usr/certs/$domain_name/fullchain.pem;
-ssl_certificate_key /usr/certs/$domain_name/privkey.pem;
+cat <<EOF > nginx/snippets/ssl-"$DOMAIN_NAME".conf
+ssl_certificate /usr/certs/$DOMAIN_NAME/fullchain.pem;
+ssl_certificate_key /usr/certs/$DOMAIN_NAME/privkey.pem;
 EOF
 
-
-# Domain configuration
-cat <<EOF > nginx/conf.d/"$domain_name".conf
+# Default configuration
+cat <<EOF > nginx/conf.d/default.conf
 server {
-  listen 80 default_server;
-  listen [::]:80 default_server;
-  server_name localhost;
+  listen       80;
+  server_name  localhost;
 
   location /pma {
     gzip on;
@@ -239,28 +232,43 @@ server {
 
     add_header Cache-Control public;
 
-    proxy_pass http://my-phpmyadmin/;
+    proxy_pass http://pma/;
 
     proxy_set_header X-Real-IP  \$remote_addr;
     proxy_set_header X-Forwarded-Proto \$scheme;
     proxy_set_header X-Forwarded-For \$remote_addr;
     proxy_set_header Host \$host;
   }
-}
 
+  location / {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+  }
+
+  # redirect server error pages to the static page /50x.html
+  #
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+    root   /usr/share/nginx/html;
+  }
+}
+EOF
+
+# Domain configuration
+cat <<EOF > nginx/conf.d/"$DOMAIN_NAME".conf
 server {
   listen 80;
   listen [::]:80;
-  server_name $domain_name www.$domain_name;
+  server_name $DOMAIN_NAME www.$DOMAIN_NAME;
 
-  return 301 https://www.$domain_name\$request_uri;
+  return 301 https://www.$DOMAIN_NAME\$request_uri;
 }
 
 server {
   listen 443 ssl default_server;
   listen [::]:443 ssl default_server;
-  server_name www.$domain_name;
-  include snippets/ssl-$domain_name.conf;
+  server_name www.$DOMAIN_NAME;
+  include snippets/ssl-$DOMAIN_NAME.conf;
   include snippets/ssl-params.conf;
 	
   root /usr/share/nginx/html;
@@ -276,7 +284,7 @@ server {
   add_header Cache-Control public;
 
   location / {
-    proxy_pass http://my-wordpress/;
+    proxy_pass http://wp/;
     proxy_buffering on;
     proxy_buffers 12 12k;
     proxy_redirect off;
@@ -294,25 +302,12 @@ EOF
 #
 # Run nginx
 #
-docker run \
-  -d \
-  -p 80:80 \
-  -p 443:443 \
-  --restart=on-failure:3 \
-  --network=wp-net \
-  --name my-nginx \
-  --mount type=bind,source="$(pwd)"/nginx/conf.d/$domain_name.conf,target=/etc/nginx/conf.d/$domain_name.conf,readonly \
-  --mount type=bind,source="$(pwd)"/nginx/snippets/ssl-$domain_name.conf,target=/etc/nginx/snippets/ssl-$domain_name.conf,readonly \
-  --mount type=bind,source="$(pwd)"/nginx/snippets/ssl-params.conf,target=/etc/nginx/snippets/ssl-params.conf,readonly \
-  --mount type=bind,source=/etc/letsencrypt/live/$domain_name/fullchain.pem,target=/usr/certs/$domain_name/fullchain.pem,readonly \
-  --mount type=bind,source=/etc/letsencrypt/live/$domain_name/privkey.pem,target=/usr/certs/$domain_name/privkey.pem,readonly \
-  --mount type=bind,source="$(pwd)"/nginx/ssl/certs/dhparam.pem,target=/usr/certs/dhparam.pem,readonly \
-  nginx:mainline-alpine
+./run.nginx.sh
 
 #
 # Setup cron job for SSL Cert Renew
 #
-crontab -l | { cat; echo "15 3 * * * certbot renew --quiet --deploy-hook \"docker exec -it my-nginx nginx -s reload\""; } | crontab -
+crontab -l | { cat; echo "15 3 * * * certbot renew --quiet --deploy-hook \"docker exec -it nginx nginx -s reload\""; } | crontab -
 
 #
 # Setup backup
@@ -320,34 +315,6 @@ crontab -l | { cat; echo "15 3 * * * certbot renew --quiet --deploy-hook \"docke
 timedatectl set-timezone Asia/Bangkok
 mkdir backups
 chown centos:centos backups
-
-# Backup script
-cat <<EOF > backup.sh
-#!/bin/bash
-
-#
-# Require root access
-#
-
-if [[ \$UID != 0 ]]; then
-    echo "Please run this script with sudo:"
-    echo "sudo \$0 \$*"
-    exit 1
-fi
-
-# For cron job
-cd $(pwd)
-
-current_time=\$(date "+%Y.%m.%d-%H.%M.%S")
-
-touch wp_htdocs/.maintenance
-tar --exclude='.maintenance' -zcf backups/wp_\$current_time.tar.gz wp_htdocs/
-docker exec my-mariadb /usr/bin/mysqldump -u root --password=$mariadb_root_pwd wordpress > backups/wp_\$current_time.sql
-rm wp_htdocs/.maintenance
-# Delete files that is older than 2 days
-find ./backups -mtime +2 -type f -delete
-EOF
-
 chmod u+rwx,g-wx,o-wx backup.sh
 
 #

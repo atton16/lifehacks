@@ -11,6 +11,5 @@ if [[ $UID != 0 ]]; then
 fi
 
 rm -rf cloudflare.ini gen-certs.sh nginx/ wp_htdocs/
-docker rm -f my-wordpress my-mariadb my-nginx
-docker volume rm my-mariadb
+docker rm -f wp sftp-user sftp-support nginx
 docker network rm wp-net
