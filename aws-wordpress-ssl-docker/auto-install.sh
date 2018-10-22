@@ -40,6 +40,7 @@ fi
 #
 # Install AWS CLI
 #
+yum install -y epel-release
 yum -y install python-pip
 pip install --upgrade pip
 pip install --upgrade awscli
@@ -83,7 +84,6 @@ mkdir wp_htdocs
 yum install -y nano vi
 
 # Install Let's Encrypt
-yum install -y epel-release
 yum install -y certbot python2-certbot-dns-cloudflare
 
 # Domain configuration

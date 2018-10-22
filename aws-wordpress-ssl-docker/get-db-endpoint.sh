@@ -1,4 +1,4 @@
-source setup-env.sh
+source export-config.sh
 
 aws rds wait db-instance-available
 export AWS_DB_ENDPOINT=$(aws rds describe-db-instances | jq -r '.DBInstances | .[0] | .Endpoint | .Address')
